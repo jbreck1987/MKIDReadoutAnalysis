@@ -30,10 +30,9 @@ class QuasiparticleTimeStream:
     # usually want 90 degree phase response
      """
 
-    def __init__(self, fs, ts, seed=3):
+    def __init__(self, fs, ts):
         self.fs = fs #Hz
         self.ts = ts #sec
-        self.photon_arrival_rng = np.random.default_rng(seed=seed)
         self.points = int(self.ts * self.fs)
         self.tvec = np.arange(0, self.points) / self.fs
         self.data = np.zeros(self.points)
@@ -65,13 +64,15 @@ class QuasiparticleTimeStream:
         plt.xlabel('Time (usec)')
         plt.ylabel(r"$\propto \Delta$ Quasiparticle Density")
 
-    def gen_photon_arrivals(self, cps=500):
+    def gen_photon_arrivals(self, seed=3, cps=500):
         """ generate boolean list corresponding to poisson-distributed photon arrival events.
         Inputs:
         - cps: int, photon co
         unts per second.
         """
-        photon_events = self.photon_arrival_rng.poisson(cps / self.fs, self.tvec.shape[0])
+        self.photon_arrivals = None
+        rng = np.random.default_rng() if seed == None else np.random.default_rng(seed = seed)
+        photon_events = rng.poisson(cps / self.fs, self.tvec.shape[0])
         self.photon_arrivals = np.array(photon_events, dtype=bool)
         if sum(photon_events) > sum(self.photon_arrivals):
             getLogger(__name__).warning(f'More than 1 photon arriving per time step. Lower the count rate?')
@@ -80,7 +81,8 @@ class QuasiparticleTimeStream:
         return self.photon_arrivals
 
     def populate_photons(self):
-        for i in range(self.data.size):
+        self.data = np.zeros(self.points)
+        for i in range(self.data.size - self.photon_pulse.shape[0]):
             if self.photon_arrivals[i]:
                 self.data[i:i + self.photon_pulse.shape[0]] = self.photon_pulse
         return self.data
