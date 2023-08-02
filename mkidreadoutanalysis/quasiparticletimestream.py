@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import skimage
-from scipy.signal import welch
 from logging import getLogger
 
 
